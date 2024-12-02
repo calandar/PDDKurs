@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <Button
+        android:id="@+id/btnRules"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Правила дорожного движения" />
+
+    <Button
+        android:id="@+id/btnTickets"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Тренировка по билетам" />
+
+    <Button
+        android:id="@+id/btnThemes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Тренировка по темам" />
+
+    <Button
+        android:id="@+id/btnMarathon"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Марафон" />
+</LinearLayout>
