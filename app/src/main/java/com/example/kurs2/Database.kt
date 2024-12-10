@@ -23,7 +23,19 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
     }
 }
 
-@Database(entities = [Question::class, Ticket::class, UserAnswer::class], version = 3)
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE tickets ADD COLUMN isMarathon INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL("ALTER TABLE tickets ADD COLUMN theme TEXT")
+    }
+}
+
+@Database(entities = [Question::class, Ticket::class, UserAnswer::class], version = 5)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun questionDao(): QuestionDao
@@ -41,7 +53,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "app_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3) // Добавляем новую миграцию
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5) // Добавляем новую миграцию
                     .build()
                 INSTANCE = instance
                 instance
@@ -62,7 +74,7 @@ object DatabaseProvider {
                 AppDatabase::class.java,
                 "app_database"
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3) // Добавляем миграцию
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5) // Добавляем миграцию
                 .build()
             INSTANCE = instance
             instance
@@ -76,6 +88,63 @@ object DatabaseProvider {
             null
         }
     }
+
+    suspend fun createMarathonTicket(context: Context): Int {
+        val db = getDatabase(context)
+        val questionDao = db.questionDao()
+        val ticketDao = db.ticketDao()
+
+        // Проверяем, существует ли уже марафонный билет
+        val existingMarathonTicket = ticketDao.getMarathonTicket()
+        if (existingMarathonTicket != null) {
+            return existingMarathonTicket.id
+        }
+
+        val allQuestions = questionDao.getAllQuestions()
+        if (allQuestions.isEmpty()) {
+            throw IllegalStateException("No questions found in the database")
+        }
+        val shuffledQuestions = allQuestions.shuffled()
+        val marathonTicket = Ticket(questions = shuffledQuestions.map { it.id }, isMarathon = true)
+
+        val ticketId = ticketDao.insertMarathonTicket(marathonTicket)
+        return ticketId.toInt()
+    }
+
+    suspend fun deleteMarathonTicket(context: Context, ticketId: Int) {
+        val db = getDatabase(context)
+        val ticketDao = db.ticketDao()
+        ticketDao.deleteTicketById(ticketId)
+    }
+
+    suspend fun getTicketById(context: Context, ticketId: Int): Ticket? {
+        val db = getDatabase(context)
+        val ticketDao = db.ticketDao()
+        return ticketDao.getTicketById(ticketId)
+    }
+
+    suspend fun createThemeTicket(context: Context, theme: String): Int {
+        val db = getDatabase(context)
+        val questionDao = db.questionDao()
+        val ticketDao = db.ticketDao()
+
+        // Проверяем, существует ли уже билет для этой темы
+        val existingThemeTicket = ticketDao.getTicketByTheme(theme)
+        if (existingThemeTicket != null) {
+            return existingThemeTicket.id
+        }
+
+        val questions = questionDao.getQuestionsByTheme(theme)
+        if (questions.isEmpty()) {
+            throw IllegalStateException("No questions found for the theme: $theme")
+        }
+        val shuffledQuestions = questions.shuffled()
+        val themeTicket = Ticket(questions = shuffledQuestions.map { it.id }, isMarathon = false, theme = theme)
+
+        val ticketId = ticketDao.insertThemeTicket(themeTicket)
+        return ticketId.toInt()
+    }
+
 
     suspend fun addInitialQuestionsIfNotExist(context: Context) {
         val db = getDatabase(context)
@@ -123,7 +192,10 @@ object DatabaseProvider {
                 hint = "Знак 3.18.2  \"Поворот налево запрещен\" запрещает только поворот налево как таковой. Таким образом, на этом перекрестке вы можете развернуться в разрыве разделительной полосы или продолжить движение в прямом направлении.",
                 imageUrl = "id9"
             ), // 9
+
         )
+
+
 
         withContext(Dispatchers.IO) {
             questionsToAdd.forEach { question ->

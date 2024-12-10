@@ -18,7 +18,9 @@ data class Question(
 @Entity(tableName = "tickets")
 data class Ticket(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val questions: List<Int> // Список ID вопросов
+    val questions: List<Int>, // Список ID вопросов
+    val isMarathon: Boolean = false, // Поле для марафонного билета
+    val theme: String? = null // Новое поле для названия темы
 )
 
 @Entity(

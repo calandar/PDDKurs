@@ -2,30 +2,22 @@ package com.example.kurs2
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
-class TicketDetailActivity : AppCompatActivity() {
-    private lateinit var questionSelectorFragment: QuestionSelectorFragment
-    private lateinit var questionDisplayFragment: QuestionDisplayFragment
+class ThemeTicketActivity : AppCompatActivity() {
     private lateinit var db: AppDatabase
     private lateinit var ticketDao: TicketDao
     private lateinit var questionDao: QuestionDao
     private lateinit var userAnswerDao: UserAnswerDao
     private var ticketId: Int = -1
+    private lateinit var questionSelectorFragment: QuestionSelectorFragment
+    private lateinit var questionDisplayFragment: QuestionDisplayFragment
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_ticket_detail)
-
-        ticketId = intent.getIntExtra("TICKET_ID", -1)
-        if (ticketId == -1) {
-            finish()
-            return
-        }
+        setContentView(R.layout.activity_theme_ticket)
 
         db = DatabaseProvider.getDatabase(this)
         ticketDao = db.ticketDao()
@@ -40,14 +32,11 @@ class TicketDetailActivity : AppCompatActivity() {
             .add(R.id.fragmentContainerBottom, questionDisplayFragment)
             .commit()
 
-        // Передаем ticketId в QuestionDisplayFragment
-        questionDisplayFragment.setTicketId(ticketId)
-
-        // Передаем ссылку на QuestionSelectorFragment в QuestionDisplayFragment
-        questionDisplayFragment.setQuestionSelectorFragment(questionSelectorFragment)
+        val theme = intent.getStringExtra("THEME") ?: throw IllegalStateException("Theme not provided")
 
         lifecycleScope.launch {
-            val ticket = DatabaseProvider.getTicketById(this@TicketDetailActivity, ticketId)
+            ticketId = DatabaseProvider.createThemeTicket(this@ThemeTicketActivity, theme)
+            val ticket = DatabaseProvider.getTicketById(this@ThemeTicketActivity, ticketId)
             if (ticket == null) {
                 throw IllegalStateException("Ticket with ID $ticketId not found")
             }
@@ -56,19 +45,24 @@ class TicketDetailActivity : AppCompatActivity() {
 
             val questionNumbers = (1..questions.size).toList()
 
+            // Передаем ticketId в QuestionDisplayFragment
+            questionDisplayFragment.setTicketId(ticketId)
+
+            // Передаем ссылку на QuestionSelectorFragment в QuestionDisplayFragment
+            questionDisplayFragment.setQuestionSelectorFragment(questionSelectorFragment)
+
+            // Инициализация фрагментов и передача данных
             questionSelectorFragment.setQuestionNumbers(questionNumbers, userAnswers) { number ->
                 val position = number - 1
                 questionDisplayFragment.setCurrentQuestion(position)
                 questionSelectorFragment.setCurrentQuestion(position)
             }
 
-            // Преобразуем userAnswers в карту с индексами, начинающимися с 0
             val answeredQuestionsMap = userAnswers.mapKeys { ticket.questions.indexOf(it.key) }
             questionDisplayFragment.setQuestions(questions, answeredQuestionsMap, onAnswerSaved = { questionIndex, isCorrect, userAnswer ->
                 lifecycleScope.launch {
                     val questionId = ticket.questions[questionIndex]
                     userAnswerDao.insert(UserAnswer(ticketId, questionId, isCorrect, userAnswer))
-                    // Обновляем состояние верхнего фрагмента навигации
                     val updatedAnswers = userAnswerDao.getAnswersByTicketId(ticketId).associate { it.questionId to it }
                     questionSelectorFragment.updateAnswers(updatedAnswers)
                 }
@@ -76,31 +70,7 @@ class TicketDetailActivity : AppCompatActivity() {
                 questionDisplayFragment.showResults()
             })
 
-            // Display the first question initially
             questionDisplayFragment.displayQuestion(questions[0])
         }
-    }
-
-    private fun showTicketOptionsDialog(ticket: Ticket) {
-        AlertDialog.Builder(this)
-            .setTitle("Выберите действие")
-            .setMessage("Выберите, как вы хотите продолжить решение билета")
-            .setPositiveButton("Продолжить") { _, _ ->
-                startTicketDetailActivity(ticket.id)
-            }
-            .setNegativeButton("Начать заново") { _, _ ->
-                lifecycleScope.launch {
-                    val db = DatabaseProvider.getDatabase(this@TicketDetailActivity)
-                    db.userAnswerDao().deleteAnswersByTicketId(ticket.id)
-                    startTicketDetailActivity(ticket.id)
-                }
-            }
-            .show()
-    }
-
-    private fun startTicketDetailActivity(ticketId: Int) {
-        val intent = Intent(this, TicketDetailActivity::class.java)
-        intent.putExtra("TICKET_ID", ticketId)
-        startActivity(intent)
     }
 }

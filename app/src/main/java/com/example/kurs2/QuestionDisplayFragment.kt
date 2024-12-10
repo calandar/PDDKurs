@@ -1,4 +1,5 @@
 package com.example.kurs2
+
 import android.annotation.SuppressLint
 import android.graphics.Color
 import android.os.Bundle
@@ -28,6 +29,7 @@ class QuestionDisplayFragment : Fragment() {
     private var onAnswerSaved: ((Int, Boolean, String) -> Unit)? = null
     private var onAllQuestionsAnswered: (() -> Unit)? = null
     private var ticketId: Int = -1
+    private var questionSelectorFragment: QuestionSelectorFragment? = null // Добавляем ссылку на QuestionSelectorFragment
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -39,8 +41,13 @@ class QuestionDisplayFragment : Fragment() {
         optionsGroup = view.findViewById(R.id.optionsGroup)
         hintButton = view.findViewById(R.id.hintButton)
         answerButton = view.findViewById(R.id.answerButton)
-        debugInfo = view.findViewById(R.id.debugInfo)
+        //debugInfo = view.findViewById(R.id.debugInfo)
+
         return view
+    }
+
+    fun setQuestionSelectorFragment(fragment: QuestionSelectorFragment) {
+        this.questionSelectorFragment = fragment
     }
 
     fun setQuestions(questions: List<Question>, answeredQuestions: Map<Int, UserAnswer>, onAnswerSaved: (Int, Boolean, String) -> Unit, onAllQuestionsAnswered: () -> Unit) {
@@ -70,7 +77,7 @@ class QuestionDisplayFragment : Fragment() {
             Glide.with(this).load(resourceId).into(questionImage)
         }
         optionsGroup.removeAllViews()
-        debugInfo.text = userAnswers.toString()
+        //debugInfo.text = userAnswers.toString()
         question.options.forEachIndexed { index, option ->
             val radioButton = RadioButton(requireContext()).apply {
                 text = option
@@ -127,27 +134,53 @@ class QuestionDisplayFragment : Fragment() {
                             .setTitle("Неправильный ответ")
                             .setMessage(question.hint ?: "Попробуйте еще раз")
                             .setPositiveButton("OK") { _, _ ->
-                                if (currentQuestionIndex < questions.size - 1) {
-                                    currentQuestionIndex++
-                                    displayQuestion(questions[currentQuestionIndex])
-                                } else {
-                                    onAllQuestionsAnswered?.invoke()
-                                }
+                                // Переход к следующему вопросу
+                                moveToNextQuestion()
                             }
                             .show()
                     } else {
-                        if (currentQuestionIndex < questions.size - 1) {
-                            currentQuestionIndex++
-                            displayQuestion(questions[currentQuestionIndex])
-                        } else {
-                            onAllQuestionsAnswered?.invoke()
-                        }
+                        // Переход к следующему вопросу
+                        moveToNextQuestion()
                     }
                 } else {
                     Toast.makeText(requireContext(), "Пожалуйста, выберите вариант ответа", Toast.LENGTH_SHORT).show()
                 }
             }
         }
+    }
+
+    private fun moveToNextQuestion() {
+        // Проверяем, есть ли следующий вопрос
+        if (currentQuestionIndex < questions.size - 1) {
+            // Проверяем, отвечен ли следующий вопрос
+            if (userAnswers[currentQuestionIndex + 1] == null) {
+                // Переходим к следующему вопросу
+                currentQuestionIndex++
+            } else {
+                // Ищем первый неотвеченный вопрос
+                val nextUnansweredQuestionIndex = questions.indexOfFirst { userAnswers[questions.indexOf(it)] == null }
+                if (nextUnansweredQuestionIndex != -1) {
+                    currentQuestionIndex = nextUnansweredQuestionIndex
+                } else {
+                    onAllQuestionsAnswered?.invoke()
+                    return
+                }
+            }
+        } else {
+            // Ищем первый неотвеченный вопрос
+            val nextUnansweredQuestionIndex = questions.indexOfFirst { userAnswers[questions.indexOf(it)] == null }
+            if (nextUnansweredQuestionIndex != -1) {
+                currentQuestionIndex = nextUnansweredQuestionIndex
+            } else {
+                onAllQuestionsAnswered?.invoke()
+                return
+            }
+        }
+
+        // Обновляем состояние верхнего фрагмента навигации
+        questionSelectorFragment?.setCurrentQuestion(currentQuestionIndex)
+        // Отображаем следующий вопрос
+        displayQuestion(questions[currentQuestionIndex])
     }
 
     fun showResults() {

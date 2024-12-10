@@ -1,4 +1,5 @@
 package com.example.kurs2
+
 import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
@@ -6,10 +7,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.kurs2.DatabaseProvider
-import com.example.kurs2.R
-import com.example.kurs2.TicketAdapter
-
 import kotlinx.coroutines.launch
 
 class TicketsActivity : AppCompatActivity() {
@@ -22,7 +19,7 @@ class TicketsActivity : AppCompatActivity() {
         val userAnswerDao = db.userAnswerDao()
 
         lifecycleScope.launch {
-            val tickets = ticketDao.getAllTickets()
+            val tickets = ticketDao.getAllTickets().filter { !it.isMarathon && it.theme == null }
             val adapter = TicketAdapter(tickets) { ticket ->
                 lifecycleScope.launch {
                     val userAnswers = userAnswerDao.getAnswersByTicketId(ticket.id)

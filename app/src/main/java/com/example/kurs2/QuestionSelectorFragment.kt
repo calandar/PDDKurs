@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 
+
 class QuestionSelectorFragment : Fragment() {
     private lateinit var recyclerViewQuestions: RecyclerView
     private lateinit var questionNumberAdapter: QuestionNumberAdapter
@@ -28,21 +29,17 @@ class QuestionSelectorFragment : Fragment() {
         recyclerViewQuestions.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
     }
 
-    fun setQuestionNumbers(questionNumbers: List<Int>, onQuestionClick: (Int) -> Unit) {
+    fun setQuestionNumbers(questionNumbers: List<Int>, userAnswers: Map<Int, UserAnswer>, onQuestionClick: (Int) -> Unit) {
         this.onQuestionClick = onQuestionClick
-        questionNumberAdapter = QuestionNumberAdapter(questionNumbers, onQuestionClick)
+        questionNumberAdapter = QuestionNumberAdapter(questionNumbers, userAnswers, onQuestionClick)
         recyclerViewQuestions.adapter = questionNumberAdapter
-    }
-
-    fun updateQuestionColor(number: Int, isCorrect: Boolean) {
-        questionNumberAdapter.updateQuestionColor(number, isCorrect)
-    }
-
-    fun setAnsweredQuestions(answeredQuestions: Map<Int, Boolean>) {
-        questionNumberAdapter.setAnsweredQuestions(answeredQuestions)
     }
 
     fun setCurrentQuestion(currentQuestionIndex: Int) {
         questionNumberAdapter.setCurrentQuestion(currentQuestionIndex)
+    }
+
+    fun updateAnswers(userAnswers: Map<Int, UserAnswer>) {
+        questionNumberAdapter.updateAnswers(userAnswers)
     }
 }

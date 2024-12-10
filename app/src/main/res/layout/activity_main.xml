@@ -3,29 +3,27 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:gravity="center"
     android:padding="16dp">
-
-    <Button
-        android:id="@+id/btnRules"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Правила дорожного движения" />
 
     <Button
         android:id="@+id/btnTickets"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Тренировка по билетам" />
+        android:text="Билеты"
+        android:layout_marginBottom="16dp" />
 
     <Button
         android:id="@+id/btnThemes"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Тренировка по темам" />
+        android:text="Темы"
+        android:layout_marginBottom="16dp" />
 
     <Button
         android:id="@+id/btnMarathon"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Марафон" />
+        android:text="Марафон"
+        android:layout_marginBottom="16dp" />
 </LinearLayout>

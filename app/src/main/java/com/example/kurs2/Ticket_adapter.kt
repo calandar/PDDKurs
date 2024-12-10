@@ -36,10 +36,10 @@ class TicketAdapter(private val tickets: List<Ticket>, private val onTicketClick
 
     override fun onBindViewHolder(holder: TicketViewHolder, position: Int) {
         val ticket = tickets[position]
-        // Здесь нужно получить статус билета из базы данных
-        val isStarted = false // Замените на логику получения статуса
-        val isCompleted = false // Замените на логику получения статуса
-        val correctAnswers = 0 // Замените на логику получения количества правильных ответов
+       
+        val isStarted = false
+        val isCompleted = false
+        val correctAnswers = 0
         val totalQuestions = ticket.questions.size
         holder.bind(ticket, isStarted, isCompleted, correctAnswers, totalQuestions)
     }
